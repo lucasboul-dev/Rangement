@@ -13,18 +13,25 @@ create table if not exists public.members (
 alter table public.members enable row level security;
 -- aucune policy : la table n'est lisible que via la fonction ci-dessous
 
-create or replace function public.is_member()
+-- Fonction de contrôle d'accès, dans un schéma privé (non exposé par l'API)
+create schema if not exists private;
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated;
+
+create or replace function private.is_member()
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
   select exists (
     select 1 from public.members
     where lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
   );
 $$;
+revoke all on function private.is_member() from public, anon;
+grant execute on function private.is_member() to authenticated;
 
 -- ---------- Emplacements : lieu > pièce > meuble > boîte (imbrication libre) ----------
 create table if not exists public.locations (
@@ -47,7 +54,7 @@ create index if not exists locations_parent_idx on public.locations(parent_id);
 create sequence if not exists public.box_number_seq;
 
 create or replace function public.assign_box_number()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = public as $$
 begin
   if new.kind = 'boite' and new.number is null then
     new.number := nextval('public.box_number_seq');
@@ -62,7 +69,7 @@ create trigger locations_box_number
 
 -- Interdit de ranger un emplacement dans lui-même (directement ou non)
 create or replace function public.check_location_cycle()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = public as $$
 declare
   cur uuid := new.parent_id;
 begin
@@ -107,7 +114,7 @@ create table if not exists public.qr_codes (
 
 -- ---------- updated_at automatique ----------
 create or replace function public.touch_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = public as $$
 begin
   new.updated_at := now();
   new.updated_by := auth.uid();
@@ -129,15 +136,15 @@ alter table public.qr_codes  enable row level security;
 
 drop policy if exists foyer on public.locations;
 create policy foyer on public.locations for all to authenticated
-  using (public.is_member()) with check (public.is_member());
+  using (private.is_member()) with check (private.is_member());
 
 drop policy if exists foyer on public.items;
 create policy foyer on public.items for all to authenticated
-  using (public.is_member()) with check (public.is_member());
+  using (private.is_member()) with check (private.is_member());
 
 drop policy if exists foyer on public.qr_codes;
 create policy foyer on public.qr_codes for all to authenticated
-  using (public.is_member()) with check (public.is_member());
+  using (private.is_member()) with check (private.is_member());
 
 -- ---------- Photos (stockage privé) ----------
 insert into storage.buckets (id, name, public)
@@ -146,19 +153,19 @@ on conflict (id) do nothing;
 
 drop policy if exists "photos foyer lecture" on storage.objects;
 create policy "photos foyer lecture" on storage.objects for select to authenticated
-  using (bucket_id = 'photos' and public.is_member());
+  using (bucket_id = 'photos' and private.is_member());
 
 drop policy if exists "photos foyer ajout" on storage.objects;
 create policy "photos foyer ajout" on storage.objects for insert to authenticated
-  with check (bucket_id = 'photos' and public.is_member());
+  with check (bucket_id = 'photos' and private.is_member());
 
 drop policy if exists "photos foyer modif" on storage.objects;
 create policy "photos foyer modif" on storage.objects for update to authenticated
-  using (bucket_id = 'photos' and public.is_member());
+  using (bucket_id = 'photos' and private.is_member());
 
 drop policy if exists "photos foyer suppression" on storage.objects;
 create policy "photos foyer suppression" on storage.objects for delete to authenticated
-  using (bucket_id = 'photos' and public.is_member());
+  using (bucket_id = 'photos' and private.is_member());
 
 -- ---------- Synchro en temps réel entre les deux téléphones ----------
 do $$
