@@ -17,5 +17,7 @@ export function errorMessage(err) {
   if (/row-level security|permission denied/i.test(m)) return 'Accès refusé : ce compte n’est pas dans la liste du foyer.'
   if (/foreign key|violates.*restrict/i.test(m)) return 'Impossible : cet emplacement contient encore des choses.'
   if (/Failed to fetch|NetworkError/i.test(m)) return 'Pas de connexion internet.'
+  if (/QuotaExceeded|NotReadable|decode|Photo illisible/i.test(m) || err.name === 'InvalidStateError')
+    return 'Impossible de lire cette photo. Essaie avec « Galerie » ou une autre photo.'
   return m
 }

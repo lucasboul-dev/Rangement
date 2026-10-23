@@ -14,6 +14,7 @@ import Scanner from './pages/Scanner.jsx'
 import QrResolve from './pages/QrResolve.jsx'
 import Labels from './pages/Labels.jsx'
 import OutList from './pages/OutList.jsx'
+import { LocationsPage, BoxesPage } from './pages/Browse.jsx'
 
 export default function App() {
   const [session, setSession] = useState(undefined)
@@ -44,6 +45,8 @@ export default function App() {
           <Route path="/q/:code" element={<QrResolve />} />
           <Route path="/etiquettes" element={<Labels />} />
           <Route path="/sortis" element={<OutList />} />
+          <Route path="/emplacements" element={<LocationsPage />} />
+          <Route path="/boites" element={<BoxesPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Gate>

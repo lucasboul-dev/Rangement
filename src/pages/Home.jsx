@@ -5,7 +5,7 @@ import { search } from '../lib/search.js'
 import { supabase } from '../lib/supabase.js'
 import { locationLabel, scopeIds, KINDS } from '../lib/tree.js'
 import { Page, Section, Empty, Sheet, Button } from '../components/ui.jsx'
-import { ItemRow, LocationRow, List } from '../components/rows.jsx'
+import { ItemRow, LocationRow, List, ContentsPreview } from '../components/rows.jsx'
 import { NewRoomForm, RoomChips } from '../components/Rooms.jsx'
 
 export default function Home() {
@@ -68,7 +68,7 @@ export default function Home() {
             </button>
           )}
         </div>
-        {locations.length > 0 && <RoomChips selectedId={roomId} onSelect={selectRoom} onAdd={() => setRoomOpen(true)} counts />}
+        {locations.length > 0 && <RoomChips selectedId={roomId} onSelect={selectRoom} onAdd={() => setRoomOpen(true)} />}
       </div>
 
       {results ? (
@@ -77,15 +77,11 @@ export default function Home() {
         <RoomView room={room} />
       ) : (
         <div className="space-y-6">
-          <Stats />
           {roots.length ? (
-            <Section title="Emplacements">
-              <List>
-                {roots.map((l) => (
-                  <LocationRow key={l.id} loc={l} />
-                ))}
-              </List>
-            </Section>
+            <div className="grid grid-cols-2 gap-3">
+              <CategoryTile to="/emplacements" icon="🗄️" label="Emplacements" hint="Pièces, meubles, étagères" />
+              <CategoryTile to="/boites" icon="📦" label="Boîtes" hint={`${locations.filter((l) => l.kind === 'boite').length} dans la maison`} />
+            </div>
           ) : (
             <Empty icon="🏠" title="Bienvenue !">
               Commence par créer tes pièces : <b>Cuisine</b>, <b>Garage</b>, <b>Grenier</b>… puis les meubles et les boîtes à
@@ -175,7 +171,6 @@ function RoomView({ room }) {
   const scope = scopeIds(index, room.id)
   const subs = index.children.get(room.id) || []
   const all = items.filter((it) => scope.has(it.location_id)).sort((a, b) => a.name.localeCompare(b.name, 'fr'))
-  const boxes = [...scope].map((id) => index.byId.get(id)).filter((l) => l?.kind === 'boite').length
 
   return (
     <div className="space-y-5">
@@ -183,9 +178,7 @@ function RoomView({ room }) {
         <div className="size-12 rounded-xl bg-carton-clair grid place-items-center text-2xl">{KINDS[room.kind]?.icon}</div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-lg truncate">{locationLabel(room)}</p>
-          <p className="text-xs text-gris">
-            {all.length} objet{all.length > 1 ? 's' : ''} · {boxes} boîte{boxes > 1 ? 's' : ''}
-          </p>
+          <ContentsPreview loc={room} />
         </div>
         <Link to={`/l/${room.id}`} className="shrink-0 rounded-xl border border-trait px-3 h-10 grid place-items-center text-sm font-medium text-kraft active:bg-carton-clair">
           Ouvrir ›
@@ -227,28 +220,13 @@ function RoomView({ room }) {
   )
 }
 
-function Stats() {
-  const { items, locations } = useData()
-  const boxes = locations.filter((l) => l.kind === 'boite').length
-  const out = items.filter((i) => i.is_out).length
-  if (!items.length && !locations.length) return null
+function CategoryTile({ to, icon, label, hint }) {
   return (
-    <div className="grid grid-cols-3 gap-2">
-      <Stat n={items.length} label="objets" />
-      <Stat n={boxes} label="boîtes" />
-      <Link to="/sortis">
-        <Stat n={out} label="à ranger" alert={out > 0} />
-      </Link>
-    </div>
-  )
-}
-
-function Stat({ n, label, alert }) {
-  return (
-    <div className={`rounded-2xl border px-3 py-2.5 ${alert ? 'bg-rouge/5 border-rouge/30' : 'bg-white border-trait'}`}>
-      <p className={`text-2xl font-bold ${alert ? 'text-rouge' : 'text-kraft'}`}>{n}</p>
-      <p className="text-xs text-gris">{label}</p>
-    </div>
+    <Link to={to} className="rounded-2xl bg-white border border-trait p-4 active:bg-carton-clair flex flex-col gap-1">
+      <span className="text-3xl">{icon}</span>
+      <span className="font-semibold text-lg">{label}</span>
+      <span className="text-xs text-gris">{hint}</span>
+    </Link>
   )
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildIndex, pathLabel, canMoveLocation, countItemsDeep, locationLabel, boxCode, roomsOf, defaultRoomParent, scopeIds, pathFrom } from './tree.js'
+import { buildIndex, pathLabel, canMoveLocation, countItemsDeep, locationLabel, boxCode, roomsOf, defaultRoomParent, scopeIds, pathFrom, boxesWithin, itemsWithin } from './tree.js'
 import { normalize, parseBoxNumber, search } from './search.js'
 import { parseScanned, makeCode, paginate, SHEETS } from './qrcodes.js'
 
@@ -55,6 +55,17 @@ describe('pièces', () => {
   it('délimite une pièce et affiche le chemin relatif', () => {
     expect([...scopeIds(index, 'grenier')].sort()).toEqual(['b12', 'b3', 'etag', 'grenier'])
     expect(pathFrom(index, 'grenier', 'b12')).toBe('Étagère 2 › Boîte 12 · Noël')
+  })
+})
+
+describe('contenu', () => {
+  it('liste les boîtes d’un meuble ou d’une pièce, par numéro', () => {
+    expect(boxesWithin(index, 'grenier').map((b) => b.number)).toEqual([3, 12])
+    expect(boxesWithin(index, 'etag').map((b) => b.number)).toEqual([12])
+    expect(boxesWithin(index, 'garage')).toEqual([])
+  })
+  it('liste les objets à tous les niveaux', () => {
+    expect(itemsWithin(index, 'grenier').map((i) => i.id)).toEqual(['i2', 'i1', 'i4'])
   })
 })
 

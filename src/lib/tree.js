@@ -131,6 +131,21 @@ export function scopeIds(index, id) {
   return s
 }
 
+/** Les boîtes contenues dans un emplacement (à tous les niveaux), par numéro. */
+export function boxesWithin(index, id) {
+  return [...descendantIds(index, id)]
+    .map((d) => index.byId.get(d))
+    .filter((l) => l?.kind === 'boite')
+    .sort((a, b) => (a.number ?? 0) - (b.number ?? 0))
+}
+
+/** Les objets contenus dans un emplacement (à tous les niveaux). */
+export function itemsWithin(index, id) {
+  const out = [...(index.itemsByLoc.get(id) || [])]
+  for (const d of descendantIds(index, id)) out.push(...(index.itemsByLoc.get(d) || []))
+  return out.sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+}
+
 /** Chemin à partir d'un ancêtre (exclu) : « Étagère 2 › Boîte 12 ». */
 export function pathFrom(index, ancestorId, id) {
   const p = pathOf(index, id)

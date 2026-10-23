@@ -179,9 +179,15 @@ export function KindIcon({ kind }) {
   return KINDS[kind]?.icon || '📦'
 }
 
-/** Choix / prise de photo, avec aperçu */
+/**
+ * Choix / prise de photo, avec aperçu.
+ * Deux entrées : l'appareil photo (capture directe) et la galerie (photo déjà prise).
+ * La galerie sert aussi de solution quand l'appareil photo d'Android refuse de s'ouvrir
+ * (ex. « espace de stockage insuffisant »).
+ */
 export function PhotoInput({ currentPath, file, onFile, onRemove }) {
-  const inputRef = useRef(null)
+  const cameraRef = useRef(null)
+  const galleryRef = useRef(null)
   const currentUrl = usePhotoUrl(file ? null : currentPath, { thumb: false })
   const [preview, setPreview] = useState(null)
   useEffect(() => {
@@ -191,22 +197,26 @@ export function PhotoInput({ currentPath, file, onFile, onRemove }) {
     return () => URL.revokeObjectURL(u)
   }, [file])
   const shown = preview || currentUrl
+  const pick = (e) => {
+    const f = e.target.files?.[0]
+    e.target.value = '' // permet de reprendre la même photo
+    if (f) onFile(f)
+  }
+  const tile =
+    'h-28 rounded-2xl border-2 border-dashed border-carton bg-carton-clair/40 text-kraft font-medium flex flex-col items-center justify-center gap-1 active:bg-carton-clair'
   return (
     <div className="space-y-2">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
-      />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={pick} />
+      <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={pick} />
       {shown ? (
         <div className="relative">
           <img src={shown} alt="" className="w-full max-h-72 object-cover rounded-2xl border border-trait" />
           <div className="absolute bottom-2 right-2 flex gap-2">
-            <Button type="button" variant="secondary" className="h-9 text-sm" onClick={() => inputRef.current?.click()}>
-              Changer
+            <Button type="button" variant="secondary" className="h-9 px-3 text-sm" onClick={() => cameraRef.current?.click()} aria-label="Reprendre avec l’appareil photo">
+              📸
+            </Button>
+            <Button type="button" variant="secondary" className="h-9 px-3 text-sm" onClick={() => galleryRef.current?.click()} aria-label="Choisir dans la galerie">
+              🖼️
             </Button>
             <Button type="button" variant="danger" className="h-9 text-sm" onClick={onRemove}>
               Retirer
@@ -214,14 +224,16 @@ export function PhotoInput({ currentPath, file, onFile, onRemove }) {
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="w-full h-32 rounded-2xl border-2 border-dashed border-carton bg-carton-clair/40 text-kraft font-medium flex flex-col items-center justify-center gap-1 active:bg-carton-clair"
-        >
-          <span className="text-3xl">📸</span>
-          Prendre une photo
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => cameraRef.current?.click()} className={tile}>
+            <span className="text-3xl">📸</span>
+            Appareil photo
+          </button>
+          <button type="button" onClick={() => galleryRef.current?.click()} className={tile}>
+            <span className="text-3xl">🖼️</span>
+            Galerie
+          </button>
+        </div>
       )}
     </div>
   )
