@@ -5,7 +5,8 @@ import { pathLabel } from '../lib/tree.js'
 import { normalize } from '../lib/search.js'
 import { uploadPhoto, deletePhoto } from '../lib/photos.js'
 import { errorMessage } from '../lib/supabase.js'
-import { Page, Field, inputClass, Button, ErrorNote, PhotoInput } from '../components/ui.jsx'
+import { Page, Field, inputClass, Button, ErrorNote, PhotoInput, Sheet } from '../components/ui.jsx'
+import { NewRoomForm, RoomChips } from '../components/Rooms.jsx'
 import { MovePicker } from '../components/MovePicker.jsx'
 
 export default function ItemForm() {
@@ -24,6 +25,7 @@ export default function ItemForm() {
   const [file, setFile] = useState(null)
   const [removePhoto, setRemovePhoto] = useState(false)
   const [picking, setPicking] = useState(false)
+  const [newRoom, setNewRoom] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [added, setAdded] = useState([])
@@ -121,6 +123,9 @@ export default function ItemForm() {
             <span className={`truncate ${locationId ? 'font-medium' : 'text-gris'}`}>{locationId ? pathLabel(data.index, locationId) : 'Pas encore rangé'}</span>
             <span className="text-gris">›</span>
           </button>
+          <div className="pt-1">
+            <RoomChips wrap selectedId={locationId} onSelect={(r) => setLocationId(r.id)} onAdd={() => setNewRoom(true)} />
+          </div>
         </Field>
 
         <PhotoInput
@@ -184,6 +189,10 @@ export default function ItemForm() {
           )}
         </div>
       </form>
+
+      <Sheet open={newRoom} onClose={() => setNewRoom(false)} title="Nouvelle pièce">
+        {newRoom && <NewRoomForm onCreated={(r) => (setLocationId(r.id), setNewRoom(false))} onCancel={() => setNewRoom(false)} />}
+      </Sheet>
 
       <MovePicker
         open={picking}

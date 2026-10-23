@@ -88,6 +88,57 @@ export function canMoveLocation(index, id, targetId) {
   return !descendantIds(index, id).has(targetId)
 }
 
+// ---------- Pièces de vie ----------
+
+export const ROOM_SUGGESTIONS = [
+  'Cuisine', 'Salon', 'Chambre', 'Salle de bain', 'Garage', 'Grenier', 'Cave', 'Bureau',
+  'Entrée', 'Buanderie', 'Salle à manger', 'Chambre d’amis', 'Cellier', 'Abri de jardin',
+]
+
+/**
+ * Les « pièces » proposées en raccourci : toutes les pièces, plus les lieux qui ne
+ * contiennent pas eux-mêmes de pièces (ex. Garage oui, Maison non si elle contient Cuisine…).
+ */
+export function roomsOf(index, locations) {
+  return locations
+    .filter((l) => {
+      if (l.kind === 'piece') return true
+      if (l.kind !== 'lieu') return false
+      return !(index.children.get(l.id) || []).some((c) => c.kind === 'piece')
+    })
+    .sort((a, b) => locationLabel(a).localeCompare(locationLabel(b), 'fr'))
+}
+
+/** Où créer une nouvelle pièce : dans le lieu (en haut) qui contient déjà le plus de pièces, sinon tout en haut. */
+export function defaultRoomParent(index) {
+  let best = null
+  let bestCount = 0
+  for (const l of index.children.get(null) || []) {
+    if (l.kind !== 'lieu') continue
+    const n = (index.children.get(l.id) || []).filter((c) => c.kind === 'piece').length
+    if (n > bestCount) {
+      best = l.id
+      bestCount = n
+    }
+  }
+  return best
+}
+
+/** L'emplacement et tous ses descendants. */
+export function scopeIds(index, id) {
+  const s = descendantIds(index, id)
+  s.add(id)
+  return s
+}
+
+/** Chemin à partir d'un ancêtre (exclu) : « Étagère 2 › Boîte 12 ». */
+export function pathFrom(index, ancestorId, id) {
+  const p = pathOf(index, id)
+  const i = p.findIndex((l) => l.id === ancestorId)
+  const rest = i === -1 ? p : p.slice(i + 1)
+  return rest.map(locationLabel).join(' › ')
+}
+
 /** Nombre d'objets (en tenant compte des quantités ? non : nombre de fiches) dans l'emplacement et ses descendants. */
 export function countItemsDeep(index, id) {
   let n = (index.itemsByLoc.get(id) || []).length

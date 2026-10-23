@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useData, linkQr } from '../lib/store.jsx'
-import { KINDS, pathLabel, boxCode } from '../lib/tree.js'
+import { KINDS, pathLabel, boxCode, canMoveLocation } from '../lib/tree.js'
 import { uploadPhoto, deletePhoto } from '../lib/photos.js'
 import { errorMessage } from '../lib/supabase.js'
-import { Page, Field, inputClass, Button, ErrorNote, PhotoInput } from '../components/ui.jsx'
+import { Page, Field, inputClass, Button, ErrorNote, PhotoInput, Sheet } from '../components/ui.jsx'
+import { NewRoomForm, RoomChips } from '../components/Rooms.jsx'
 import { MovePicker } from '../components/MovePicker.jsx'
 
 const PLACEHOLDERS = {
@@ -39,6 +40,7 @@ export default function LocationForm() {
   const [file, setFile] = useState(null)
   const [removePhoto, setRemovePhoto] = useState(false)
   const [picking, setPicking] = useState(false)
+  const [newRoom, setNewRoom] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -111,6 +113,17 @@ export default function LocationForm() {
             <span className={`truncate ${parentId ? '' : 'text-gris'}`}>{parentId ? pathLabel(data.index, parentId) : 'Nulle part (tout en haut)'}</span>
             <span className="text-gris">›</span>
           </button>
+          {(kind === 'boite' || kind === 'meuble') && (
+            <div className="pt-1">
+              <RoomChips
+                wrap
+                selectedId={parentId}
+                onSelect={(r) => setParentId(r.id)}
+                onAdd={() => setNewRoom(true)}
+                disabled={(r) => editing && !canMoveLocation(data.index, editing.id, r.id)}
+              />
+            </div>
+          )}
         </Field>
 
         <Field label="Photo (facultatif)" hint="Une photo de la boîte ou de l’étagère aide à la reconnaître.">
@@ -131,6 +144,10 @@ export default function LocationForm() {
           {busy ? 'Enregistrement…' : 'Enregistrer'}
         </Button>
       </form>
+
+      <Sheet open={newRoom} onClose={() => setNewRoom(false)} title="Nouvelle pièce">
+        {newRoom && <NewRoomForm onCreated={(r) => (setParentId(r.id), setNewRoom(false))} onCancel={() => setNewRoom(false)} />}
+      </Sheet>
 
       <MovePicker
         open={picking}

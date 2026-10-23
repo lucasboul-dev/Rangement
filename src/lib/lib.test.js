@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildIndex, pathLabel, canMoveLocation, countItemsDeep, locationLabel, boxCode } from './tree.js'
+import { buildIndex, pathLabel, canMoveLocation, countItemsDeep, locationLabel, boxCode, roomsOf, defaultRoomParent, scopeIds, pathFrom } from './tree.js'
 import { normalize, parseBoxNumber, search } from './search.js'
 import { parseScanned, makeCode, paginate, SHEETS } from './qrcodes.js'
 
@@ -41,6 +41,20 @@ describe('arborescence', () => {
   })
   it('range les objets sans emplacement sous null', () => {
     expect(index.itemsByLoc.get(null).map((i) => i.id)).toEqual(['i5'])
+  })
+})
+
+describe('pièces', () => {
+  it('propose les pièces et les lieux sans pièces', () => {
+    expect(roomsOf(index, locations).map((l) => l.name)).toEqual(['Garage', 'Grenier'])
+  })
+  it('crée les nouvelles pièces dans la maison', () => {
+    expect(defaultRoomParent(index)).toBe('maison')
+    expect(defaultRoomParent(buildIndex([], []))).toBe(null)
+  })
+  it('délimite une pièce et affiche le chemin relatif', () => {
+    expect([...scopeIds(index, 'grenier')].sort()).toEqual(['b12', 'b3', 'etag', 'grenier'])
+    expect(pathFrom(index, 'grenier', 'b12')).toBe('Étagère 2 › Boîte 12 · Noël')
   })
 })
 

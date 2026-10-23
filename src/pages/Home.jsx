@@ -3,21 +3,43 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useData } from '../lib/store.jsx'
 import { search } from '../lib/search.js'
 import { supabase } from '../lib/supabase.js'
+import { locationLabel, scopeIds, KINDS } from '../lib/tree.js'
 import { Page, Section, Empty, Sheet, Button } from '../components/ui.jsx'
 import { ItemRow, LocationRow, List } from '../components/rows.jsx'
+import { NewRoomForm, RoomChips } from '../components/Rooms.jsx'
 
 export default function Home() {
   const { locations, items, index } = useData()
   const [params, setParams] = useSearchParams()
   const q = params.get('q') || ''
+  const roomId = params.get('piece')
+  const room = roomId ? index.byId.get(roomId) : null
   const [addOpen, setAddOpen] = useState(false)
+  const [roomOpen, setRoomOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const results = useMemo(() => (q.trim() ? search(q, items, locations, index) : null), [q, items, locations, index])
+  const scope = useMemo(() => (room ? scopeIds(index, room.id) : null), [room, index])
+
+  const results = useMemo(() => {
+    if (!q.trim()) return null
+    const r = search(q, items, locations, index)
+    if (!scope) return r
+    return {
+      items: r.items.filter((it) => scope.has(it.location_id)),
+      locations: r.locations.filter((l) => scope.has(l.id) && l.id !== room.id),
+    }
+  }, [q, items, locations, index, scope, room])
+
   const roots = index.children.get(null) || []
   const loose = index.itemsByLoc.get(null) || []
 
-  const setQ = (v) => setParams(v ? { q: v } : {}, { replace: true })
+  const update = (next) => {
+    const p = { q, piece: roomId, ...next }
+    const clean = Object.fromEntries(Object.entries(p).filter(([, v]) => v))
+    setParams(clean, { replace: true })
+  }
+  const setQ = (v) => update({ q: v })
+  const selectRoom = (r) => update({ piece: r && r.id !== roomId ? r.id : null })
 
   return (
     <Page
@@ -28,7 +50,7 @@ export default function Home() {
         </button>
       }
     >
-      <div className="sticky top-14 z-10 -mx-4 px-4 pb-3 pt-1 bg-papier">
+      <div className="sticky top-14 z-10 -mx-4 px-4 pb-3 pt-1 bg-papier space-y-3">
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gris">🔍</span>
           <input
@@ -36,7 +58,7 @@ export default function Home() {
             role="searchbox"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Où est… ? (objet, tag, n° de boîte)"
+            placeholder={room ? `Chercher dans ${locationLabel(room)}…` : 'Où est… ? (objet, tag, n° de boîte)'}
             className="w-full h-12 rounded-2xl bg-white border border-trait pl-10 pr-10 outline-none focus:border-kraft focus:ring-2 focus:ring-carton-clair shadow-sm"
             enterKeyHint="search"
           />
@@ -46,10 +68,13 @@ export default function Home() {
             </button>
           )}
         </div>
+        {locations.length > 0 && <RoomChips selectedId={roomId} onSelect={selectRoom} onAdd={() => setRoomOpen(true)} counts />}
       </div>
 
       {results ? (
-        <SearchResults results={results} q={q} />
+        <SearchResults results={results} q={q} room={room} />
+      ) : room ? (
+        <RoomView room={room} />
       ) : (
         <div className="space-y-6">
           <Stats />
@@ -63,12 +88,12 @@ export default function Home() {
             </Section>
           ) : (
             <Empty icon="🏠" title="Bienvenue !">
-              Commence par créer tes grands lieux : <b>Maison</b>, <b>Garage</b>, <b>Cave</b>… puis les pièces, les meubles et les
-              boîtes à l’intérieur.
+              Commence par créer tes pièces : <b>Cuisine</b>, <b>Garage</b>, <b>Grenier</b>… puis les meubles et les boîtes à
+              l’intérieur.
               <div className="mt-4">
-                <Link to="/l/nouveau?type=lieu" className="inline-block rounded-xl bg-kraft text-white px-4 py-2.5 font-medium">
-                  Créer mon premier lieu
-                </Link>
+                <button onClick={() => setRoomOpen(true)} className="inline-block rounded-xl bg-kraft text-white px-4 py-2.5 font-medium">
+                  Créer ma première pièce
+                </button>
               </div>
             </Empty>
           )}
@@ -93,26 +118,32 @@ export default function Home() {
         </button>
       )}
 
-      <Sheet open={addOpen} onClose={() => setAddOpen(false)} title="Ajouter">
+      <Sheet open={addOpen} onClose={() => setAddOpen(false)} title={room ? `Ajouter dans ${locationLabel(room)}` : 'Ajouter'}>
         <div className="grid grid-cols-2 gap-3">
-          <Link to="/o/nouveau" className="rounded-2xl bg-white border border-trait p-4 text-center active:bg-carton-clair">
-            <p className="text-3xl">🔹</p>
-            <p className="font-medium mt-1">Un objet</p>
-          </Link>
-          <Link to="/l/nouveau?type=boite" className="rounded-2xl bg-white border border-trait p-4 text-center active:bg-carton-clair">
-            <p className="text-3xl">📦</p>
-            <p className="font-medium mt-1">Une boîte</p>
-          </Link>
-          <Link to="/l/nouveau?type=meuble" className="rounded-2xl bg-white border border-trait p-4 text-center active:bg-carton-clair">
-            <p className="text-3xl">🗄️</p>
-            <p className="font-medium mt-1">Un meuble</p>
-          </Link>
-          <Link to="/l/nouveau?type=piece" className="rounded-2xl bg-white border border-trait p-4 text-center active:bg-carton-clair">
+          <AddTile to={room ? `/o/nouveau?dans=${room.id}` : '/o/nouveau'} icon="🔹" label="Un objet" />
+          <AddTile to={`/l/nouveau?type=boite${room ? `&dans=${room.id}` : ''}`} icon="📦" label="Une boîte" />
+          <AddTile to={`/l/nouveau?type=meuble${room ? `&dans=${room.id}` : ''}`} icon="🗄️" label="Un meuble" />
+          <button
+            onClick={() => (setAddOpen(false), setRoomOpen(true))}
+            className="rounded-2xl bg-white border border-trait p-4 text-center active:bg-carton-clair"
+          >
             <p className="text-3xl">🚪</p>
-            <p className="font-medium mt-1">Une pièce / un lieu</p>
-          </Link>
+            <p className="font-medium mt-1">Une pièce</p>
+          </button>
         </div>
         <p className="text-xs text-gris mt-3 text-center">Astuce : ouvre d’abord une boîte, puis « + Objet » pour la remplir directement.</p>
+      </Sheet>
+
+      <Sheet open={roomOpen} onClose={() => setRoomOpen(false)} title="Nouvelle pièce">
+        {roomOpen && (
+          <NewRoomForm
+            onCreated={(r) => {
+              setRoomOpen(false)
+              update({ piece: r.id, q: '' })
+            }}
+            onCancel={() => setRoomOpen(false)}
+          />
+        )}
       </Sheet>
 
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
@@ -126,6 +157,73 @@ export default function Home() {
         </div>
       </Sheet>
     </Page>
+  )
+}
+
+function AddTile({ to, icon, label }) {
+  return (
+    <Link to={to} className="rounded-2xl bg-white border border-trait p-4 text-center active:bg-carton-clair">
+      <p className="text-3xl">{icon}</p>
+      <p className="font-medium mt-1">{label}</p>
+    </Link>
+  )
+}
+
+/** Tout ce qu'il y a dans une pièce, sur une seule page. */
+function RoomView({ room }) {
+  const { index, items } = useData()
+  const scope = scopeIds(index, room.id)
+  const subs = index.children.get(room.id) || []
+  const all = items.filter((it) => scope.has(it.location_id)).sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+  const boxes = [...scope].map((id) => index.byId.get(id)).filter((l) => l?.kind === 'boite').length
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl bg-white border border-trait p-4 flex items-center gap-3">
+        <div className="size-12 rounded-xl bg-carton-clair grid place-items-center text-2xl">{KINDS[room.kind]?.icon}</div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-lg truncate">{locationLabel(room)}</p>
+          <p className="text-xs text-gris">
+            {all.length} objet{all.length > 1 ? 's' : ''} · {boxes} boîte{boxes > 1 ? 's' : ''}
+          </p>
+        </div>
+        <Link to={`/l/${room.id}`} className="shrink-0 rounded-xl border border-trait px-3 h-10 grid place-items-center text-sm font-medium text-kraft active:bg-carton-clair">
+          Ouvrir ›
+        </Link>
+      </div>
+
+      {subs.length > 0 && (
+        <Section title={`Meubles et boîtes (${subs.length})`}>
+          <List>
+            {subs.map((s) => (
+              <LocationRow key={s.id} loc={s} />
+            ))}
+          </List>
+        </Section>
+      )}
+
+      <Section title={`Tous les objets de la pièce (${all.length})`}>
+        {all.length ? (
+          <List>
+            {all.map((it) => (
+              <ItemRow key={it.id} item={it} fromId={room.id} />
+            ))}
+          </List>
+        ) : (
+          <div className="rounded-2xl border-2 border-dashed border-trait text-center text-sm text-gris py-6">
+            Rien dans cette pièce pour l’instant.
+            <div className="mt-3 flex justify-center gap-2">
+              <Link to={`/l/nouveau?type=boite&dans=${room.id}`} className="rounded-xl bg-kraft text-white px-3 py-2 font-medium">
+                + Boîte
+              </Link>
+              <Link to={`/o/nouveau?dans=${room.id}`} className="rounded-xl border border-trait bg-white px-3 py-2 font-medium text-kraft">
+                + Objet
+              </Link>
+            </div>
+          </div>
+        )}
+      </Section>
+    </div>
   )
 }
 
@@ -154,12 +252,12 @@ function Stat({ n, label, alert }) {
   )
 }
 
-function SearchResults({ results, q }) {
+function SearchResults({ results, q, room }) {
   const { locations, items } = results
   if (!locations.length && !items.length)
     return (
-      <Empty icon="🤷" title={`Rien trouvé pour « ${q} »`}>
-        Essaie un autre mot, un tag ou un numéro de boîte.
+      <Empty icon="🤷" title={`Rien trouvé pour « ${q} »${room ? ` dans ${locationLabel(room)}` : ''}`}>
+        {room ? 'Retire le filtre de pièce pour chercher dans toute la maison.' : 'Essaie un autre mot, un tag ou un numéro de boîte.'}
       </Empty>
     )
   return (
@@ -168,7 +266,7 @@ function SearchResults({ results, q }) {
         <Section title={`Objets (${items.length})`}>
           <List>
             {items.slice(0, 100).map((it) => (
-              <ItemRow key={it.id} item={it} />
+              <ItemRow key={it.id} item={it} fromId={room?.id} />
             ))}
           </List>
         </Section>

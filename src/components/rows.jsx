@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useData } from '../lib/store.jsx'
-import { countItemsDeep, locationLabel, pathLabel, KINDS } from '../lib/tree.js'
+import { countItemsDeep, locationLabel, pathLabel, pathFrom, KINDS } from '../lib/tree.js'
 import { Thumb } from './ui.jsx'
 
 export function LocationRow({ loc, showPath = false }) {
@@ -29,7 +29,7 @@ export function LocationRow({ loc, showPath = false }) {
   )
 }
 
-export function ItemRow({ item, showPath = true }) {
+export function ItemRow({ item, showPath = true, fromId }) {
   const { index } = useData()
   return (
     <Link to={`/o/${item.id}`} className="flex items-center gap-3 px-3 py-2.5 active:bg-carton-clair/50">
@@ -39,7 +39,11 @@ export function ItemRow({ item, showPath = true }) {
           {item.name}
           {item.quantity !== 1 && <span className="text-gris font-normal"> × {item.quantity}</span>}
         </p>
-        {showPath && <p className="text-xs text-gris truncate">{pathLabel(index, item.location_id)}</p>}
+        {showPath && (
+          <p className="text-xs text-gris truncate">
+            {fromId ? pathFrom(index, fromId, item.location_id) || 'directement dans la pièce' : pathLabel(index, item.location_id)}
+          </p>
+        )}
         {item.is_out && <p className="text-xs text-rouge font-medium">Sorti de sa place</p>}
       </div>
       <span className="text-gris">›</span>
