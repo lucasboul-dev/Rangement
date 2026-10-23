@@ -1,0 +1,39 @@
+{
+  "name": "rangement",
+  "version": "1.0.0",
+  "description": "Inventaire de la maison : quoi, où, dans quelle boîte",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucasboul-dev/rangement.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lucasboul-dev/rangement/issues"
+  },
+  "homepage": "https://github.com/lucasboul-dev/rangement#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "fuse.js": "^7.5.0",
+    "qr-scanner": "^1.4.2",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.2",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.5",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.5"
+  },
+  "private": true,
+  "type": "module"
+}
