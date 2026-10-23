@@ -1,0 +1,66 @@
+# Visite quotidienne de la base Supabase.
+#
+# Supabase met en pause les projets gratuits qui reçoivent trop peu d'activité sur 7 jours.
+# Cette tâche fait une petite requête chaque matin pour que l'appli reste toujours disponible,
+# même si personne ne l'ouvre pendant les vacances.
+#
+# Si la visite échoue (base en pause, clé changée…), la tâche passe en échec
+# et GitHub envoie un e-mail au propriétaire du dépôt.
+#
+# Le 1er de chaque mois, elle ajoute aussi un commit vide marqué [skip netlify] :
+# GitHub désactive les tâches planifiées d'un dépôt public resté 60 jours sans activité,
+# et ce marqueur évite de déclencher un déploiement Netlify.
+
+name: Garder Supabase éveillé
+
+on:
+  schedule:
+    - cron: '17 6 * * *' # tous les jours vers 7 h – 8 h (heure de Paris)
+  workflow_dispatch: # lancement manuel possible depuis l'onglet Actions
+
+permissions:
+  contents: write
+
+jobs:
+  visite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Adresse et clé publique du projet (les mêmes que celles déjà présentes dans l'appli publiée)
+      SUPABASE_URL: https://ziqmkozlbmsqftdyzvep.supabase.co
+      SUPABASE_KEY: sb_publishable_B1CTbIpgXKKnXoeh_nZU6g_lUI8Jv1E
+    steps:
+      - name: Visiter la base Supabase
+        run: |
+          for essai in 1 2 3; do
+            code=$(curl -s -o reponse.json -w '%{http_code}' --max-time 30 \
+              "$SUPABASE_URL/rest/v1/locations?select=id&limit=1" \
+              -H "apikey: $SUPABASE_KEY")
+            echo "Essai $essai : HTTP $code"
+            if [ "$code" = "200" ]; then
+              echo "✅ Supabase est éveillé."
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "❌ Supabase ne répond pas (HTTP $code). Le projet est peut-être en pause :"
+          echo "   ouvre https://supabase.com/dashboard et clique sur « Resume project »."
+          cat reponse.json || true
+          exit 1
+
+      - name: Signe de vie mensuel du dépôt
+        if: github.event_name == 'schedule'
+        run: |
+          if [ "$(date -u +%d)" != "01" ]; then
+            echo "Pas le 1er du mois, rien à faire."
+            exit 0
+          fi
+          git init -q depot && cd depot
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git fetch -q --depth 1 origin "${{ github.ref_name }}"
+          git checkout -q FETCH_HEAD
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q --allow-empty -m "Signe de vie mensuel [skip netlify]"
+          git push -q origin "HEAD:${{ github.ref_name }}"
+          echo "✅ Signe de vie ajouté."
