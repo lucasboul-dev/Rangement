@@ -11,7 +11,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Rangement',
+        name: 'Rangement des Lulu',
         short_name: 'Rangement',
         description: 'Ce qu’on a à la maison, et où.',
         lang: 'fr',

@@ -21,7 +21,7 @@ export default function Home() {
 
   return (
     <Page
-      title="Rangement"
+      title="Rangement des Lulu"
       actions={
         <button onClick={() => setMenuOpen(true)} className="size-10 grid place-items-center rounded-full active:bg-carton-clair text-xl" aria-label="Menu">
           ⋯

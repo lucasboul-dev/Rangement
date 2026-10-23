@@ -22,7 +22,7 @@ export default function Login() {
       <form onSubmit={submit} className="mx-auto w-full max-w-sm space-y-5">
         <div className="text-center space-y-2 mb-8">
           <img src="/icon.svg" alt="" className="size-20 mx-auto" />
-          <h1 className="text-2xl font-bold">Rangement</h1>
+          <h1 className="text-2xl font-bold">Rangement des Lulu</h1>
           <p className="text-gris">Ce qu’on a à la maison, et où.</p>
         </div>
         <Field label="E-mail">

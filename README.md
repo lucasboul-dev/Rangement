@@ -1,4 +1,4 @@
-# 📦 Rangement
+# 📦 Rangement des Lulu
 
 Notre inventaire de la maison : **ce qu'on a, et où**. Pièce, meuble, boîte numérotée, étiquette QR.
 Application web installable sur Android, partagée à deux, synchronisée en direct.
