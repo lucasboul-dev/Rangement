@@ -22,12 +22,13 @@ const index = buildIndex(locations, items)
 
 describe('arborescence', () => {
   it('affiche le chemin complet', () => {
-    expect(pathLabel(index, 'b12')).toBe('Maison › Grenier › Étagère 2 › Boîte 12 · Noël')
+    expect(pathLabel(index, 'b12')).toBe('Maison › Grenier › Étagère 2 › Boîte Noël')
     expect(pathLabel(index, null)).toBe('Non rangé')
   })
   it('nomme les boîtes', () => {
-    expect(locationLabel(locations[4])).toBe('Boîte 3')
-    expect(boxCode(locations[3])).toBe('B-012')
+    expect(locationLabel(locations[3])).toBe('Boîte Noël')
+    expect(locationLabel(locations[4])).toBe('Boîte 3') // ancienne boîte sans nom
+    expect(locationLabel({ kind: 'boite', name: 'Boîte à chaussures', number: 9 })).toBe('Boîte à chaussures')
   })
   it('interdit de ranger un emplacement dans lui-même ou un descendant', () => {
     expect(canMoveLocation(index, 'grenier', 'b12')).toBe(false)
@@ -54,12 +55,12 @@ describe('pièces', () => {
   })
   it('délimite une pièce et affiche le chemin relatif', () => {
     expect([...scopeIds(index, 'grenier')].sort()).toEqual(['b12', 'b3', 'etag', 'grenier'])
-    expect(pathFrom(index, 'grenier', 'b12')).toBe('Étagère 2 › Boîte 12 · Noël')
+    expect(pathFrom(index, 'grenier', 'b12')).toBe('Étagère 2 › Boîte Noël')
   })
 })
 
 describe('contenu', () => {
-  it('liste les boîtes d’un meuble ou d’une pièce, par numéro', () => {
+  it('liste les boîtes d’un meuble ou d’une pièce, par nom', () => {
     expect(boxesWithin(index, 'grenier').map((b) => b.number)).toEqual([3, 12])
     expect(boxesWithin(index, 'etag').map((b) => b.number)).toEqual([12])
     expect(boxesWithin(index, 'garage')).toEqual([])

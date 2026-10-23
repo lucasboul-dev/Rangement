@@ -10,10 +10,17 @@ export const KINDS = {
 export function locationLabel(loc) {
   if (!loc) return 'Non rangé'
   if (loc.kind === 'boite') {
-    const num = loc.number != null ? `Boîte ${loc.number}` : 'Boîte'
-    return loc.name ? `${num} · ${loc.name}` : num
+    // « Câbles » → « Boîte Câbles » ; un nom qui commence déjà par « boîte » est gardé tel quel
+    if (loc.name && /^bo[iî]te\b/i.test(loc.name.trim())) return loc.name.trim()
+    return `Boîte ${boxName(loc)}`
   }
   return loc.name || KINDS[loc.kind]?.label || 'Sans nom'
+}
+
+/** Nom court d'une boîte (« Câbles ») ; le numéro ne sert que pour les anciennes boîtes sans nom. */
+export function boxName(loc) {
+  if (loc.name?.trim()) return loc.name.trim()
+  return loc.number != null ? String(loc.number) : 'sans nom'
 }
 
 export function boxCode(loc) {
@@ -46,7 +53,6 @@ const KIND_ORDER = { lieu: 0, piece: 1, meuble: 2, boite: 3 }
 export function compareLocations(a, b) {
   const k = (KIND_ORDER[a.kind] ?? 9) - (KIND_ORDER[b.kind] ?? 9)
   if (k) return k
-  if (a.kind === 'boite' && b.kind === 'boite') return (a.number ?? 0) - (b.number ?? 0)
   return locationLabel(a).localeCompare(locationLabel(b), 'fr')
 }
 
@@ -131,12 +137,12 @@ export function scopeIds(index, id) {
   return s
 }
 
-/** Les boîtes contenues dans un emplacement (à tous les niveaux), par numéro. */
+/** Les boîtes contenues dans un emplacement (à tous les niveaux), par nom. */
 export function boxesWithin(index, id) {
   return [...descendantIds(index, id)]
     .map((d) => index.byId.get(d))
     .filter((l) => l?.kind === 'boite')
-    .sort((a, b) => (a.number ?? 0) - (b.number ?? 0))
+    .sort((a, b) => locationLabel(a).localeCompare(locationLabel(b), 'fr', { numeric: true }))
 }
 
 /** Les objets contenus dans un emplacement (à tous les niveaux). */

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useData } from '../lib/store.jsx'
-import { locationLabel, pathLabel, pathFrom, boxesWithin, itemsWithin, KINDS } from '../lib/tree.js'
+import { locationLabel, pathLabel, pathFrom, boxesWithin, itemsWithin, boxName, KINDS } from '../lib/tree.js'
 import { Thumb } from './ui.jsx'
 
 const MAX_PILLS = 6
@@ -15,8 +15,7 @@ export function ContentsPreview({ loc }) {
       <div className="flex flex-wrap gap-1 mt-1">
         {shown.map((b) => (
           <span key={b.id} className="max-w-full truncate text-[11px] leading-5 rounded-md bg-carton-clair/70 text-kraft-fonce px-1.5">
-            📦 {b.number}
-            {b.name ? ` · ${b.name}` : ''}
+            📦 {boxName(b)}
           </span>
         ))}
         {boxes.length > MAX_PILLS && <span className="text-[11px] leading-5 text-gris">+{boxes.length - MAX_PILLS}</span>}

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useData } from '../lib/store.jsx'
-import { search, normalize, parseBoxNumber } from '../lib/search.js'
+import { search, normalize } from '../lib/search.js'
 import { locationLabel, pathLabel, itemsWithin } from '../lib/tree.js'
 import { Page, Empty, Fab } from '../components/ui.jsx'
 import { LocationRow, List } from '../components/rows.jsx'
@@ -54,20 +54,18 @@ export function LocationsPage() {
   )
 }
 
-/** /boites : toutes les boîtes de la maison, cherchables par numéro, nom, endroit ou contenu. */
+/** /boites : toutes les boîtes de la maison, cherchables par nom, endroit ou contenu. */
 export function BoxesPage() {
   const { locations, index } = useData()
   const [q, setQ] = useQuery()
 
   const boxes = useMemo(
-    () => locations.filter((l) => l.kind === 'boite').sort((a, b) => (a.number ?? 0) - (b.number ?? 0)),
+    () => locations.filter((l) => l.kind === 'boite').sort((a, b) => locationLabel(a).localeCompare(locationLabel(b), 'fr', { numeric: true })),
     [locations],
   )
 
   const shown = useMemo(() => {
     if (!q.trim()) return boxes
-    const num = parseBoxNumber(q)
-    if (num != null) return boxes.filter((b) => b.number === num)
     const nq = normalize(q)
     return boxes.filter((b) => {
       const hay = [locationLabel(b), pathLabel(index, b.parent_id), b.notes, ...itemsWithin(index, b.id).map((i) => i.name)]
@@ -77,7 +75,7 @@ export function BoxesPage() {
 
   return (
     <Page title={`Boîtes (${boxes.length})`} back="/">
-      <SearchBox value={q} onChange={setQ} placeholder="N° de boîte, nom, pièce ou contenu" />
+      <SearchBox value={q} onChange={setQ} placeholder="Nom de boîte, pièce ou contenu" />
       {shown.length ? (
         <List>
           {shown.map((b) => (

@@ -116,7 +116,7 @@ export default function Scanner() {
             className={inputClass}
             value={manual}
             onChange={(e) => setManual(e.target.value)}
-            placeholder={target ? 'Ou tape le code (ex. K7P2QX)' : 'Ou tape un n° de boîte / un code'}
+            placeholder={target ? 'Ou tape le code (ex. K7P2QX)' : 'Ou tape le code de l’étiquette'}
             autoCapitalize="characters"
           />
           <Button variant="secondary" className="h-12 shrink-0">

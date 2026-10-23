@@ -58,7 +58,7 @@ export default function Home() {
             role="searchbox"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={room ? `Chercher dans ${locationLabel(room)}…` : 'Où est… ? (objet, tag, n° de boîte)'}
+            placeholder={room ? `Chercher dans ${locationLabel(room)}…` : 'Où est… ? (objet, tag, boîte)'}
             className="w-full h-12 rounded-2xl bg-white border border-trait pl-10 pr-10 outline-none focus:border-kraft focus:ring-2 focus:ring-carton-clair shadow-sm"
             enterKeyHint="search"
           />
@@ -235,7 +235,7 @@ function SearchResults({ results, q, room }) {
   if (!locations.length && !items.length)
     return (
       <Empty icon="🤷" title={`Rien trouvé pour « ${q} »${room ? ` dans ${locationLabel(room)}` : ''}`}>
-        {room ? 'Retire le filtre de pièce pour chercher dans toute la maison.' : 'Essaie un autre mot, un tag ou un numéro de boîte.'}
+        {room ? 'Retire le filtre de pièce pour chercher dans toute la maison.' : 'Essaie un autre mot, un tag ou un nom de boîte.'}
       </Empty>
     )
   return (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useData, getQrForLocation, unlinkQr } from '../lib/store.jsx'
-import { locationLabel, pathOf, boxCode, KINDS, canMoveLocation } from '../lib/tree.js'
+import { locationLabel, pathOf, KINDS, canMoveLocation } from '../lib/tree.js'
 import { usePhotoUrl } from '../lib/photos.js'
 import { errorMessage } from '../lib/supabase.js'
 import { Page, Section, Empty, Sheet, Button, Fab, ErrorNote } from '../components/ui.jsx'
@@ -114,7 +114,6 @@ export default function LocationPage() {
           <div className="flex-1 min-w-0">
             <p className="text-xs uppercase tracking-wider text-gris font-semibold">
               {KINDS[loc.kind]?.label}
-              {loc.kind === 'boite' && ` · ${boxCode(loc)}`}
             </p>
             <p className="text-xl font-bold leading-tight">{locationLabel(loc)}</p>
             <div className="flex flex-wrap gap-2 mt-2">

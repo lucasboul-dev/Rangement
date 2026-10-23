@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useData, linkQr } from '../lib/store.jsx'
-import { KINDS, pathLabel, boxCode, canMoveLocation } from '../lib/tree.js'
+import { KINDS, pathLabel, canMoveLocation } from '../lib/tree.js'
 import { uploadPhoto, deletePhoto } from '../lib/photos.js'
 import { errorMessage } from '../lib/supabase.js'
 import { Page, Field, inputClass, Button, ErrorNote, PhotoInput, Sheet } from '../components/ui.jsx'
@@ -12,7 +12,7 @@ const PLACEHOLDERS = {
   lieu: 'Maison, Garage, Cave…',
   piece: 'Cuisine, Grenier, Chambre d’amis…',
   meuble: 'Étagère 2, Armoire bleue, Congélateur…',
-  boite: 'Noël, Câbles, Vêtements bébé… (facultatif)',
+  boite: 'Noël, Câbles, Vêtements bébé…',
 }
 
 export default function LocationForm() {
@@ -48,7 +48,7 @@ export default function LocationForm() {
 
   async function submit(e) {
     e.preventDefault()
-    if (kind !== 'boite' && !name.trim()) return setError('Donne-lui un nom.')
+    if (!name.trim()) return setError('Donne-lui un nom.')
     setBusy(true)
     setError('')
     try {
@@ -98,13 +98,8 @@ export default function LocationForm() {
           </div>
         </Field>
 
-        {kind === 'boite' && (
-          <p className="text-sm text-gris -mt-2">
-            {editing?.number != null ? `Numéro : ${boxCode(editing)}` : 'Le numéro de boîte est attribué automatiquement.'}
-          </p>
-        )}
 
-        <Field label={kind === 'boite' ? 'Nom (facultatif)' : 'Nom'}>
+        <Field label="Nom">
           <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} placeholder={PLACEHOLDERS[kind]} autoFocus={!editing} />
         </Field>
 

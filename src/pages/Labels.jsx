@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { useData, insertBlankCodes, linkQr, listQrByLocation } from '../lib/store.jsx'
 import { SHEETS, makeCode, paginate, qrUrl } from '../lib/qrcodes.js'
-import { boxCode, locationLabel, pathLabel, compareLocations, KINDS } from '../lib/tree.js'
+import { locationLabel, pathLabel, compareLocations, KINDS } from '../lib/tree.js'
 import { errorMessage } from '../lib/supabase.js'
 import { Page, Button, Field, inputClass, ErrorNote, Spinner } from '../components/ui.jsx'
 
@@ -84,8 +84,8 @@ export default function Labels() {
         setQrMap(map)
         raw = chosen.map((loc) => ({
           code: map.get(loc.id),
-          title: loc.kind === 'boite' ? boxCode(loc) : locationLabel(loc),
-          subtitle: loc.kind === 'boite' ? loc.name || (loc.parent_id ? locationLabel(index.byId.get(loc.parent_id)) : '') : loc.parent_id ? pathLabel(index, loc.parent_id) : '',
+          title: locationLabel(loc),
+          subtitle: loc.parent_id ? pathLabel(index, loc.parent_id) : '',
         }))
       }
       const withImages = await Promise.all(
@@ -122,7 +122,7 @@ export default function Labels() {
             <p className="text-sm text-gris">
               {mode === 'vierges'
                 ? 'Imprime une planche d’avance et colle les étiquettes au fur et à mesure. Au premier scan, l’appli te propose de créer la boîte. Une étiquette peut être réattribuée à tout moment.'
-                : 'Imprime les étiquettes d’emplacements déjà créés, avec leur numéro et leur nom.'}
+                : 'Imprime les étiquettes d’emplacements déjà créés, avec leur nom et leur emplacement.'}
             </p>
 
             <Field label="Format de planche (A4)">
@@ -254,7 +254,7 @@ function LabelCell({ label, sheet }) {
   const vertical = sheet.h > 50
   const pad = 2.5
   const qr = vertical ? Math.min(sheet.w - 14, sheet.h - 24) : Math.min(sheet.h - pad * 2, sheet.w * 0.48)
-  const title = label.blank ? 'Boîte n°' : label.title
+  const title = label.blank ? 'Boîte' : label.title
   return (
     <div
       style={{
