@@ -4,9 +4,21 @@ import { useData, getQrForLocation, unlinkQr } from '../lib/store.jsx'
 import { locationLabel, pathOf, KINDS, canMoveLocation } from '../lib/tree.js'
 import { usePhotoUrl } from '../lib/photos.js'
 import { errorMessage } from '../lib/supabase.js'
-import { Page, Section, Empty, Sheet, Button, Fab, ErrorNote } from '../components/ui.jsx'
+import { Page, Section, Empty, Sheet, Button, ErrorNote } from '../components/ui.jsx'
 import { ItemRow, LocationRow, List } from '../components/rows.jsx'
 import { MovePicker } from '../components/MovePicker.jsx'
+
+/** Ce qu'on peut ajouter selon l'emplacement ouvert (le plus courant en premier). */
+const OBJET = { label: 'Un objet', icon: '🔹' }
+const BOITE = { label: 'Une boîte', icon: '📦', type: 'boite' }
+const MEUBLE = { label: 'Un meuble', icon: '🗄️', type: 'meuble' }
+const PIECE = { label: 'Une pièce', icon: '🚪', type: 'piece' }
+const ADD_CHOICES = {
+  lieu: [PIECE, MEUBLE, BOITE, OBJET],
+  piece: [MEUBLE, BOITE, OBJET],
+  meuble: [BOITE, OBJET, { label: 'Un meuble / étagère', icon: '🗄️', type: 'meuble' }],
+  boite: [OBJET, { label: 'Une boîte dedans', icon: '📦', type: 'boite' }],
+}
 
 export default function LocationPage() {
   const { id } = useParams()
@@ -16,6 +28,7 @@ export default function LocationPage() {
   const { index } = data
   const loc = index.byId.get(id)
   const [menu, setMenu] = useState(false)
+  const [adding, setAdding] = useState(false)
   const [moving, setMoving] = useState(false)
   const [qr, setQr] = useState(undefined)
   const [error, setError] = useState('')
@@ -168,7 +181,27 @@ export default function LocationPage() {
         </Section>
       </div>
 
-      <Fab to={`/o/nouveau?dans=${loc.id}`} label="Objet" />
+      <button
+        onClick={() => setAdding(true)}
+        className="no-print fixed z-30 right-4 bottom-24 h-14 pl-5 pr-6 rounded-full bg-kraft text-white shadow-lg shadow-kraft/30 flex items-center gap-2 font-semibold active:bg-kraft-fonce"
+      >
+        <span className="text-2xl leading-none">+</span> Ajouter
+      </button>
+
+      <Sheet open={adding} onClose={() => setAdding(false)} title={`Ajouter dans ${locationLabel(loc)}`}>
+        <div className="grid grid-cols-2 gap-3">
+          {ADD_CHOICES[loc.kind].map((c) => (
+            <Link
+              key={c.label}
+              to={c.type ? `/l/nouveau?type=${c.type}&dans=${loc.id}` : `/o/nouveau?dans=${loc.id}`}
+              className="rounded-2xl bg-white border border-trait p-4 text-center active:bg-carton-clair"
+            >
+              <p className="text-3xl">{c.icon}</p>
+              <p className="font-medium mt-1">{c.label}</p>
+            </Link>
+          ))}
+        </div>
+      </Sheet>
 
       <Sheet open={menu} onClose={() => setMenu(false)} title={locationLabel(loc)}>
         <div className="grid gap-2">
