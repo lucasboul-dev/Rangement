@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildIndex, pathLabel, canMoveLocation, countItemsDeep, locationLabel, boxCode, roomsOf, defaultRoomParent, scopeIds, pathFrom, boxesWithin, itemsWithin } from './tree.js'
-import { normalize, parseBoxNumber, search } from './search.js'
+import { normalize, parseBoxNumber, search, snippet } from './search.js'
 import { parseScanned, makeCode, paginate, SHEETS } from './qrcodes.js'
 
 const locations = [
@@ -95,6 +95,35 @@ describe('recherche', () => {
   })
   it('requête vide = rien', () => {
     expect(search('  ', items, locations, index).items).toEqual([])
+  })
+})
+
+describe('description des boîtes', () => {
+  const long = 'vieux câbles HDMI, chargeurs, une souris, rallonges, piles AA et AAA, télécommande de la télé, disque dur externe, vieux téléphone Nokia, lampe frontale, tournevis de précision'
+  const locs = [
+    { id: 'g', parent_id: null, kind: 'piece', name: 'Grenier', notes: '' },
+    { id: 'e', parent_id: 'g', kind: 'boite', name: 'Électronique', notes: long },
+    { id: 'd', parent_id: 'g', kind: 'boite', name: 'Déco', notes: 'guirlandes, boules de noël, nappe rouge, bougies, crèche' },
+  ]
+  const idx = buildIndex(locs, [])
+  const top = (q) => search(q, [], locs, idx).locations[0]?.id
+  it('trouve une boîte par un mot de sa description', () => {
+    expect(top('tournevis')).toBe('e')
+    expect(top('nokia')).toBe('e')
+    expect(top('creche')).toBe('d')
+  })
+  it('tolère les fautes et plusieurs mots', () => {
+    expect(top('nape')).toBe('d')
+    expect(top('tournevi')).toBe('e')
+    expect(top('piles telecommande')).toBe('e')
+  })
+  it('donne l’extrait qui correspond', () => {
+    const s = snippet(long, 'nokia')
+    expect(s.match).toBe('Nokia')
+    expect(s.before.endsWith('téléphone ')).toBe(true)
+    expect(snippet('guirlandes, crèche', 'creche').match).toBe('crèche')
+    expect(snippet('guirlandes, nappe rouge', 'nape').match).toBe('nappe')
+    expect(snippet('rien à voir', 'perceuse')).toBe(null)
   })
 })
 

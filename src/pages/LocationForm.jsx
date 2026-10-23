@@ -130,8 +130,16 @@ export default function LocationForm() {
           />
         </Field>
 
-        <Field label="Notes (facultatif)">
-          <textarea className={`${inputClass} h-24 py-2`} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex. étagère du haut, derrière les valises" />
+        <Field
+          label={kind === 'boite' || kind === 'meuble' ? 'Contenu / description (facultatif)' : 'Notes (facultatif)'}
+          hint={kind === 'boite' || kind === 'meuble' ? 'Pas besoin de créer chaque objet : liste ce qu’il y a dedans, la recherche le trouvera.' : undefined}
+        >
+          <textarea
+            className={`${inputClass} h-28 py-2`}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={kind === 'boite' || kind === 'meuble' ? 'Ex. guirlandes, boules de Noël, nappe rouge, bougies…' : 'Ex. étagère du haut, derrière les valises'}
+          />
         </Field>
 
         <ErrorNote error={error} />

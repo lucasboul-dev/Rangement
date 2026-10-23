@@ -132,7 +132,11 @@ export default function LocationPage() {
         <ErrorNote error={error} />
 
         {photo && <img src={photo} alt="" className="w-full max-h-80 object-cover rounded-2xl border border-trait" />}
-        {loc.notes && <p className="whitespace-pre-wrap rounded-2xl bg-white border border-trait px-3 py-2.5 text-sm">{loc.notes}</p>}
+        {loc.notes && (
+          <Section title={loc.kind === 'boite' || loc.kind === 'meuble' ? 'Contenu / description' : 'Notes'}>
+            <p className="whitespace-pre-wrap rounded-2xl bg-white border border-trait px-3 py-2.5 text-sm">{loc.notes}</p>
+          </Section>
+        )}
 
         {subs.length > 0 && (
           <Section title={`Dedans (${subs.length})`}>

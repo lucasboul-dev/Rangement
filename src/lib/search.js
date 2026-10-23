@@ -80,3 +80,40 @@ function dedupe(list) {
   const seen = new Set()
   return list.filter((x) => (seen.has(x.id) ? false : (seen.add(x.id), true)))
 }
+
+/** minuscules + sans accents, en gardant la même longueur que le texte d'origine (pour découper un extrait) */
+function fold(s) {
+  return (s || '').normalize('NFC').split('').map((c) => c.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().charAt(0) || c).join('')
+}
+
+/**
+ * Extrait d'un texte autour du premier mot de la recherche trouvé (tolère le début de mot / une faute en fin de mot).
+ * Retourne { before, match, after } ou null.
+ */
+export function snippet(text, query, radius = 32) {
+  if (!text || !query?.trim()) return null
+  text = text.normalize('NFC')
+  const t = fold(text)
+  const words = normalize(query).split(' ').filter((w) => w.length >= 2)
+  for (const w of words) {
+    for (const probe of [w, w.slice(0, Math.max(3, w.length - 2))]) {
+      const re = new RegExp(`(^|[^a-z0-9])${probe.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
+      const m = re.exec(t)
+      if (!m) continue
+      const start = m.index + m[1].length
+      let end = start + probe.length
+      while (end < t.length && /[a-z0-9]/.test(t[end])) end++ // jusqu'à la fin du mot
+      // l'extrait commence et finit sur des mots entiers
+      let from = Math.max(0, start - radius)
+      while (from > 0 && /\S/.test(text[from - 1])) from--
+      let to = Math.min(text.length, end + radius)
+      while (to < text.length && /\S/.test(text[to])) to++
+      return {
+        before: (from > 0 ? '…' : '') + text.slice(from, start),
+        match: text.slice(start, end),
+        after: text.slice(end, to) + (to < text.length ? '…' : ''),
+      }
+    }
+  }
+  return null
+}

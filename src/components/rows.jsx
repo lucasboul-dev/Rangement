@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useData } from '../lib/store.jsx'
 import { locationLabel, pathLabel, pathFrom, boxesWithin, itemsWithin, boxName, KINDS } from '../lib/tree.js'
 import { Thumb } from './ui.jsx'
+import { snippet } from '../lib/search.js'
 
 const MAX_PILLS = 6
 
@@ -23,6 +24,7 @@ export function ContentsPreview({ loc }) {
     )
   }
   const items = itemsWithin(index, loc.id)
+  if (!items.length && loc.notes?.trim()) return <p className="text-xs text-gris line-clamp-2 whitespace-pre-line">{loc.notes.trim()}</p>
   if (!items.length) return <p className="text-xs text-gris">vide</p>
   const names = items.slice(0, 5).map((i) => i.name).join(', ')
   return (
@@ -33,7 +35,7 @@ export function ContentsPreview({ loc }) {
   )
 }
 
-export function LocationRow({ loc, showPath = false }) {
+export function LocationRow({ loc, showPath = false, query }) {
   const { index } = useData()
   const parentPath = loc.parent_id ? pathLabel(index, loc.parent_id) : ''
   return (
@@ -45,14 +47,14 @@ export function LocationRow({ loc, showPath = false }) {
           {loc.is_full && <span className="ml-2 align-middle text-[10px] font-semibold uppercase rounded bg-rouge/10 text-rouge px-1.5 py-0.5">pleine</span>}
         </p>
         {showPath && parentPath && <p className="text-xs text-gris truncate">{parentPath}</p>}
-        <ContentsPreview loc={loc} />
+        <MatchSnippet text={loc.notes} query={query} fallback={<ContentsPreview loc={loc} />} />
       </div>
       <span className="text-gris">›</span>
     </Link>
   )
 }
 
-export function ItemRow({ item, showPath = true, fromId }) {
+export function ItemRow({ item, showPath = true, fromId, query }) {
   const { index } = useData()
   return (
     <Link to={`/o/${item.id}`} className="flex items-center gap-3 px-3 py-2.5 active:bg-carton-clair/50">
@@ -67,10 +69,24 @@ export function ItemRow({ item, showPath = true, fromId }) {
             {fromId ? pathFrom(index, fromId, item.location_id) || 'directement dans la pièce' : pathLabel(index, item.location_id)}
           </p>
         )}
+        {query && <MatchSnippet text={item.notes} query={query} />}
         {item.is_out && <p className="text-xs text-rouge font-medium">Sorti de sa place</p>}
       </div>
       <span className="text-gris">›</span>
     </Link>
+  )
+}
+
+/** Extrait de la description qui correspond à la recherche, mot trouvé en gras. */
+function MatchSnippet({ text, query, fallback = null }) {
+  const s = query ? snippet(text, query) : null
+  if (!s) return fallback
+  return (
+    <p className="text-xs text-gris line-clamp-2">
+      « {s.before}
+      <mark className="bg-carton-clair text-encre font-semibold rounded px-0.5">{s.match}</mark>
+      {s.after} »
+    </p>
   )
 }
 

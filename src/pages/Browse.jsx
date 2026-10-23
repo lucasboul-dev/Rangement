@@ -32,7 +32,7 @@ export function LocationsPage() {
         found.length ? (
           <List>
             {found.map((l) => (
-              <LocationRow key={l.id} loc={l} showPath />
+              <LocationRow key={l.id} loc={l} showPath query={q} />
             ))}
           </List>
         ) : (
@@ -79,7 +79,7 @@ export function BoxesPage() {
       {shown.length ? (
         <List>
           {shown.map((b) => (
-            <LocationRow key={b.id} loc={b} showPath />
+            <LocationRow key={b.id} loc={b} showPath query={q} />
           ))}
         </List>
       ) : boxes.length ? (

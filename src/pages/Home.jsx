@@ -244,7 +244,7 @@ function SearchResults({ results, q, room }) {
         <Section title={`Objets (${items.length})`}>
           <List>
             {items.slice(0, 100).map((it) => (
-              <ItemRow key={it.id} item={it} fromId={room?.id} />
+              <ItemRow key={it.id} item={it} fromId={room?.id} query={q} />
             ))}
           </List>
         </Section>
@@ -253,7 +253,7 @@ function SearchResults({ results, q, room }) {
         <Section title={`Emplacements (${locations.length})`}>
           <List>
             {locations.slice(0, 50).map((l) => (
-              <LocationRow key={l.id} loc={l} showPath />
+              <LocationRow key={l.id} loc={l} showPath query={q} />
             ))}
           </List>
         </Section>
